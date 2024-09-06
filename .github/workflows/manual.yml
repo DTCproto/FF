@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [win32, win64]
+        os: [win64]
     steps:
       - uses: actions/checkout@v4
 
@@ -94,15 +94,25 @@ jobs:
           --build-intel-qsv=y --build-amd-amf=y \
           --compiler-flavors=${{ matrix.os }}
 
+      - name: show build result files
+        run: |
+          ls -R ${{ github.workspace }}/build/FFmpeg/*.exe
+
+      - name: Get current date
+        run: |
+          echo "current_date=$(date +'%Y-%m-%d')" >> "$GITHUB_ENV"
+
+      - name: 7-Zip FFmpeg binaries
+        run: |
+          7z a -mx9 ${{ github.workspace }}/archives/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg/*.exe
+
       - name: Upload FFmpeg binaries
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree
           compression-level: 9
           path: |
-            ${{ github.workspace }}/build/FFmpeg/ffmpeg.exe
-            ${{ github.workspace }}/build/FFmpeg/ffprobe.exe
-            ${{ github.workspace }}/build/FFmpeg/ffplay.exe
+            ${{ github.workspace }}/archives/*
           if-no-files-found: error
 
   release:
@@ -131,5 +141,4 @@ jobs:
           prerelease: false
           body: "FFmpeg nonfree build result."
           files: |
-            ${{ github.workspace }}/archives/*.7z
-            ${{ github.workspace }}/archives/*.zip
+            ${{ github.workspace }}/archives/**
