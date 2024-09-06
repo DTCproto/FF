@@ -1,1 +1,87 @@
 
+name: BUILD_FFMPEG_BY_MANUAL
+
+on:
+  workflow_dispatch:
+    inputs:
+      helpers_branch:
+        description: '指定helpers分支'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - 'master'
+      helpers_commit_id:
+        description: '指定helpers使用commit id版本'
+        required: true
+        default: 'HEAD~0'
+        type: string
+      ffmpeg_branch:
+        description: '指定ffmpeg分支'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - 'master'
+      ffmpeg_commit_id:
+        description: '指定ffmpeg使用commit id版本'
+        required: true
+        default: 'HEAD~0'
+        type: string
+      ffmpeg_ext_params:
+        description: 'ffmpeg自定义扩展编译参数'
+        required: true
+        default: '--enable-libvvenc'
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [win64]
+    steps:
+      - uses: actions/checkout@v4
+    
+      - name: install git
+        run: |
+          apt-get install git -y
+
+      - name: git clone helpers
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.helpers_branch }} https://github.com/rdp/ffmpeg-windows-build-helpers.git
+          cd ${{ github.workspace }}/build/ffmpeg-windows-build-helpers
+          git reset --hard ${{ inputs.helpers_commit_id }}
+      
+      - name: git clone FFmpeg
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.ffmpeg_branch }} https://github.com/FFmpeg/FFmpeg.git
+          cd ${{ github.workspace }}/build/FFmpeg
+          git reset --hard ${{ inputs.ffmpeg_commit_id }}
+      
+      - name: add ffmpeg ext build params
+        run: |
+          sed -i 's/--enable-libaom/--enable-libaom ${{ inputs.ffmpeg_ext_params }}/g' ${{ github.workspace }}/build/ffmpeg-windows-build-helpers/cross_compile_ffmpeg.sh
+      
+      - name: build ffmpeg
+        run: |
+          cd ${{ github.workspace }}/build/ffmpeg-windows-build-helpers
+          ./cross_compile_ffmpeg.sh --ffmpeg-source-dir=${{ github.workspace }}/build/FFmpeg --gcc-cpu-count=$(nproc) --disable-nonfree=n --sandbox-ok=y --build-ffmpeg-static=y --build-intel-qsv=y --build-amd-amf=y --compiler-flavors=${{ matrix.os }}
+        
+      - name: Upload FFmpeg binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-bin-win64
+          compression-level: 9
+          path: |
+            ${{ github.workspace }}/build/FFmpeg/ffmpeg.exe
+            ${{ github.workspace }}/build/FFmpeg/ffprobe.exe
+            ${{ github.workspace }}/build/FFmpeg/ffplay.exe
+          if-no-files-found: error
