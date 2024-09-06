@@ -1,0 +1,136 @@
+name: BUILD_FFMPEG_BY_MANUAL(BTBN)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bash_branch:
+        description: "指定BtbN分支"
+        required: true
+        default: "master"
+        type: choice
+        options:
+          - "master"
+      bash_commit_id:
+        description: "指定BtbN使用commit id版本"
+        required: true
+        default: "HEAD~0"
+        type: string
+      ffmpeg_branch:
+        description: "指定ffmpeg分支"
+        required: true
+        default: "master"
+        type: choice
+        options:
+          - "master"
+          - "7.0"
+      release_archives:
+        description: "enable release archives"
+        default: true
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [win64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install APT dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: git curl
+      
+      - name: set branch params[master]
+        if: ${{ inputs.ffmpeg_branch == 'master' }}
+        run: |
+          echo ffmpeg_branch_fullname=${{ inputs.ffmpeg_branch }} >> $GITHUB_ENV
+      
+      - name: set branch params[release]
+        if: ${{ inputs.ffmpeg_branch != 'master' }}
+        run: |
+          echo ffmpeg_branch_fullname="release/${{ inputs.ffmpeg_branch }}" >> $GITHUB_ENV
+
+      - name: Get FFmpeg commit
+        id: ffmpeg-info
+        run: |
+          git_sha=$(gh api repos/FFmpeg/FFmpeg/commits/${{ env.ffmpeg_branch_fullname }} -q .sha)
+          echo ffmpeg_sha=$git_sha >> $GITHUB_ENV
+          echo ffmpeg_sha_short=${git_sha::7} >> $GITHUB_ENV
+
+      - name: git clone bash
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.bash_branch }} https://github.com/BtbN/FFmpeg-Builds.git
+          cd ${{ github.workspace }}/build/FFmpeg-Builds
+          git reset --hard ${{ inputs.bash_commit_id }}
+
+      - name: add master branch addin
+        run: |
+          cp -R ${{ github.workspace }}/ext/master.sh > ${{ github.workspace }}/build/FFmpeg-Builds/addins/master.sh
+
+      - name: docker prune all
+        run: |
+          docker builder prune --all
+
+      - name: build ffmpeg
+        run: |
+          cd ${{ github.workspace }}/build/FFmpeg-Builds/
+          export QUICKBUILD=1
+          ./makeimage.sh ${{ matrix.os }} nonfree ${{ inputs.ffmpeg_branch }}
+          ./build.sh ${{ matrix.os }} nonfree ${{ inputs.ffmpeg_branch }}
+
+      - name: show build result files
+        run: |
+          ls -R ${{ github.workspace }}/build/FFmpeg-Builds/artifacts
+
+      - name: Upload FFmpeg binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_sha_short }}-nonfree
+          compression-level: 9
+          path: |
+            ${{ github.workspace }}/build/FFmpeg-Builds/artifacts/ffmpeg-*
+          if-no-files-found: error
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download FFmpeg archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ffmpeg-bin-*
+          merge-multiple: true
+          path: ${{ github.workspace }}/archives
+      
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/archives
+
+      - name: Get current date time
+        run: |
+          echo "current_date_time=$(date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+
+      - name: Release FFmpeg archives
+        uses: softprops/action-gh-release@v2
+        if: ${{ inputs.release_archives }}
+        with:
+          tag_name: "V2-${{ env.current_date_time }}"
+          name: "V2-${{ env.current_date_time }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          body: "FFmpeg nonfree build result."
+          files: |
+            ${{ github.workspace }}/archives/**
