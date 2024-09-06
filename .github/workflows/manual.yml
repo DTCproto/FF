@@ -114,6 +114,8 @@ jobs:
         with:
           pattern: ffmpeg-bin-*.7z
           merge-multiple: true
+          path: ${{ github.workspace }}/archives
+          run: ls -R ${{ github.workspace }}/archives
 
       - name: Get current date time
         run: |
@@ -129,4 +131,4 @@ jobs:
           prerelease: false
           body: "FFmpeg nonfree build result."
           files: |
-            ${{ github.workspace }}/**/ffmpeg-*.7z
+            ${{ github.workspace }}/archives/*.7z
