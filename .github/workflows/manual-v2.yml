@@ -79,7 +79,7 @@ jobs:
 
       - name: add master branch addin
         run: |
-          cp -R ${{ github.workspace }}/ext/master.sh > ${{ github.workspace }}/build/FFmpeg-Builds/addins/master.sh
+          cp -f ${{ github.workspace }}/ext/master.sh ${{ github.workspace }}/build/FFmpeg-Builds/addins/master.sh
 
       - name: docker prune all
         run: |
