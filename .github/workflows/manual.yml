@@ -100,7 +100,7 @@ jobs:
 
       - name: 7-Zip FFmpeg binaries
         run: |
-          7z a -mx9 ${{ github.workspace }}/temp/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg/*.exe
+          7z a -mx9 ${{ github.workspace }}/temp/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg/ff{mpeg,probe,play}.exe
 
       - name: show zip files
         run: |
