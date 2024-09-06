@@ -42,7 +42,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -50,23 +50,24 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: git curl
-      
+
       - name: set branch params[master]
         if: ${{ inputs.ffmpeg_branch == 'master' }}
         run: |
           echo ffmpeg_branch_fullname=${{ inputs.ffmpeg_branch }} >> $GITHUB_ENV
-      
+
       - name: set branch params[release]
         if: ${{ inputs.ffmpeg_branch != 'master' }}
         run: |
           echo ffmpeg_branch_fullname="release/${{ inputs.ffmpeg_branch }}" >> $GITHUB_ENV
 
       - name: Get FFmpeg commit
-        id: ffmpeg-info
         run: |
-          git_sha=$(gh api repos/FFmpeg/FFmpeg/commits/${{ env.ffmpeg_branch_fullname }} -q .sha)
-          echo ffmpeg_sha=$git_sha >> $GITHUB_ENV
-          echo ffmpeg_sha_short=${git_sha::7} >> $GITHUB_ENV
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone --depth=1 -b ${{ env.ffmpeg_branch_fullname }} https://github.com/FFmpeg/FFmpeg.git
+          cd ${{ github.workspace }}/build/FFmpeg
+          echo "ffmpeg_sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: git clone bash
         run: |
@@ -95,13 +96,21 @@ jobs:
         run: |
           ls -R ${{ github.workspace }}/build/FFmpeg-Builds/artifacts
 
+      - name: 7-Zip FFmpeg binaries
+        run: |
+          7z a -mx9 ${{ github.workspace }}/temp/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_sha_short }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg-Builds/artifacts/*
+
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/temp
+
       - name: Upload FFmpeg binaries
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_sha_short }}-nonfree
           compression-level: 9
           path: |
-            ${{ github.workspace }}/build/FFmpeg-Builds/artifacts/ffmpeg-*
+            ${{ github.workspace }}/temp/*
           if-no-files-found: error
 
   release:
@@ -114,7 +123,7 @@ jobs:
           pattern: ffmpeg-bin-*
           merge-multiple: true
           path: ${{ github.workspace }}/archives
-      
+
       - name: show zip files
         run: |
           ls -R ${{ github.workspace }}/archives
