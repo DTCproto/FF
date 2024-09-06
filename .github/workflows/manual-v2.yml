@@ -70,6 +70,7 @@ jobs:
           git clone --depth=1 -b ${{ env.ffmpeg_branch_fullname }} https://github.com/FFmpeg/FFmpeg.git
           cd ${{ github.workspace }}/build/FFmpeg
           echo "ffmpeg_sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "REPO=btbn/ffmpeg-builds" >> "$GITHUB_ENV"
 
       - name: git clone bash
         run: |
