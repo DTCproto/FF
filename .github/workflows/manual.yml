@@ -1,48 +1,56 @@
-
 name: BUILD_FFMPEG_BY_MANUAL
 
 on:
   workflow_dispatch:
     inputs:
       helpers_branch:
-        description: '指定helpers分支'
+        description: "指定helpers分支"
         required: true
-        default: 'master'
+        default: "master"
         type: choice
         options:
-          - 'master'
+          - "master"
       helpers_commit_id:
-        description: '指定helpers使用commit id版本'
+        description: "指定helpers使用commit id版本"
         required: true
-        default: 'HEAD~0'
+        default: "HEAD~0"
         type: string
       ffmpeg_branch:
-        description: '指定ffmpeg分支'
+        description: "指定ffmpeg分支"
         required: true
-        default: 'master'
+        default: "master"
         type: choice
         options:
-          - 'master'
+          - "master"
       ffmpeg_commit_id:
-        description: '指定ffmpeg使用commit id版本'
+        description: "指定ffmpeg使用commit id版本"
         required: true
-        default: 'HEAD~0'
+        default: "HEAD~0"
         type: string
+      enable_ext_params:
+        description: "是否启用ffmpeg自定义扩展编译参数"
+        required: true
+        default: false
+        type: boolean
       ffmpeg_ext_params:
-        description: 'ffmpeg自定义扩展编译参数'
-        required: true
-        default: '--enable-libvvenc'
+        description: "ffmpeg自定义扩展编译参数"
+        required: false
+        default: "--enable-libvvenc"
         type: string
+      release_archives:
+        description: "enable release archives"
+        default: true
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [win64]
+        os: [win32, win64]
     steps:
       - uses: actions/checkout@v4
 
@@ -61,7 +69,7 @@ jobs:
           git clone -b ${{ inputs.helpers_branch }} https://github.com/rdp/ffmpeg-windows-build-helpers.git
           cd ${{ github.workspace }}/build/ffmpeg-windows-build-helpers
           git reset --hard ${{ inputs.helpers_commit_id }}
-      
+
       - name: git clone FFmpeg
         run: |
           mkdir -p ${{ github.workspace }}/build
@@ -69,23 +77,56 @@ jobs:
           git clone -b ${{ inputs.ffmpeg_branch }} https://github.com/FFmpeg/FFmpeg.git
           cd ${{ github.workspace }}/build/FFmpeg
           git reset --hard ${{ inputs.ffmpeg_commit_id }}
-      
+          echo "ffmpeg_short_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       - name: add ffmpeg ext build params
+        if: ${{ inputs.enable_ext_params }}
         run: |
+          cat ${{ github.workspace }}/ext/cross_compile_ffmpeg.sh > ${{ github.workspace }}/build/ffmpeg-windows-build-helpers/cross_compile_ffmpeg.sh
           sed -i 's/--enable-libaom/--enable-libaom ${{ inputs.ffmpeg_ext_params }}/g' ${{ github.workspace }}/build/ffmpeg-windows-build-helpers/cross_compile_ffmpeg.sh
-      
+
       - name: build ffmpeg
         run: |
           cd ${{ github.workspace }}/build/ffmpeg-windows-build-helpers
-          ./cross_compile_ffmpeg.sh --ffmpeg-source-dir=${{ github.workspace }}/build/FFmpeg --gcc-cpu-count=$(nproc) --disable-nonfree=n --sandbox-ok=y --build-ffmpeg-static=y --build-intel-qsv=y --build-amd-amf=y --compiler-flavors=${{ matrix.os }}
-        
+          ./cross_compile_ffmpeg.sh --ffmpeg-source-dir=${{ github.workspace }}/build/FFmpeg \
+          --gcc-cpu-count=$(nproc) --sandbox-ok=y --build-ffmpeg-static=y \
+          --disable-nonfree=n \
+          --build-intel-qsv=y --build-amd-amf=y \
+          --compiler-flavors=${{ matrix.os }}
+
       - name: Upload FFmpeg binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-bin-win64
+          name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z
           compression-level: 9
           path: |
             ${{ github.workspace }}/build/FFmpeg/ffmpeg.exe
             ${{ github.workspace }}/build/FFmpeg/ffprobe.exe
             ${{ github.workspace }}/build/FFmpeg/ffplay.exe
           if-no-files-found: error
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download FFmpeg archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ffmpeg-bin-*.7z
+          merge-multiple: true
+
+      - name: Get current date time
+        run: |
+          echo "current_date_time=$(date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+
+      - name: Release FFmpeg archives
+        uses: softprops/action-gh-release@v2
+        if: ${{ inputs.release_archives }}
+        with:
+          tag_name: "V-${{ env.current_date_time }}"
+          name: "V-${{ env.current_date_time }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          body: "FFmpeg nonfree build result."
+          files: |
+            ${{ github.workspace }}/**/ffmpeg-*.7z
