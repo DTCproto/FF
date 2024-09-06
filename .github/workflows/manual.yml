@@ -97,7 +97,7 @@ jobs:
       - name: Upload FFmpeg binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z
+          name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree
           compression-level: 9
           path: |
             ${{ github.workspace }}/build/FFmpeg/ffmpeg.exe
@@ -112,7 +112,7 @@ jobs:
       - name: Download FFmpeg archives
         uses: actions/download-artifact@v4
         with:
-          pattern: ffmpeg-bin-*.7z
+          pattern: ffmpeg-bin-*
           merge-multiple: true
           path: ${{ github.workspace }}/archives
           run: ls -R ${{ github.workspace }}/archives
@@ -132,3 +132,4 @@ jobs:
           body: "FFmpeg nonfree build result."
           files: |
             ${{ github.workspace }}/archives/*.7z
+            ${{ github.workspace }}/archives/*.zip
