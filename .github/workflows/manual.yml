@@ -98,13 +98,13 @@ jobs:
         run: |
           ls -R ${{ github.workspace }}/build/FFmpeg/*.exe
 
-      - name: Get current date
-        run: |
-          echo "current_date=$(date +'%Y-%m-%d')" >> "$GITHUB_ENV"
-
       - name: 7-Zip FFmpeg binaries
         run: |
-          7z a -mx9 ${{ github.workspace }}/archives/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg/*.exe
+          7z a -mx9 ${{ github.workspace }}/temp/ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg/*.exe
+
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/temp
 
       - name: Upload FFmpeg binaries
         uses: actions/upload-artifact@v4
@@ -112,7 +112,7 @@ jobs:
           name: ffmpeg-bin-${{ matrix.os }}-${{ env.ffmpeg_short_version }}-nonfree
           compression-level: 9
           path: |
-            ${{ github.workspace }}/archives/*
+            ${{ github.workspace }}/temp/*
           if-no-files-found: error
 
   release:
@@ -125,7 +125,10 @@ jobs:
           pattern: ffmpeg-bin-*
           merge-multiple: true
           path: ${{ github.workspace }}/archives
-          run: ls -R ${{ github.workspace }}/archives
+      
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/archives
 
       - name: Get current date time
         run: |
