@@ -87,7 +87,7 @@ jobs:
 
       - name: set build env params
         run: |
-          echo "QUICKBUILD=0" >> "$GITHUB_ENV"
+          echo "QUICKBUILD=1" >> "$GITHUB_ENV"
 
       - name: build base image
         run: |
