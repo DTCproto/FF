@@ -46,7 +46,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          config: .github/buildkitd.toml
+          config: ${{ github.workspace }}/.github/buildkitd.toml
 
       - name: Install APT dependencies
         uses: awalsh128/cache-apt-pkgs-action@v1
