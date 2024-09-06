@@ -85,11 +85,18 @@ jobs:
         run: |
           docker builder prune --all
 
+      - name: set build env params
+        run: |
+          echo "QUICKBUILD=0" >> "$GITHUB_ENV"
+
+      - name: build base image
+        run: |
+          cd ${{ github.workspace }}/build/FFmpeg-Builds/
+          ./makeimage.sh ${{ matrix.os }} nonfree ${{ inputs.ffmpeg_branch }}
+
       - name: build ffmpeg
         run: |
           cd ${{ github.workspace }}/build/FFmpeg-Builds/
-          export QUICKBUILD=1
-          ./makeimage.sh ${{ matrix.os }} nonfree ${{ inputs.ffmpeg_branch }}
           ./build.sh ${{ matrix.os }} nonfree ${{ inputs.ffmpeg_branch }}
 
       - name: show build result files
