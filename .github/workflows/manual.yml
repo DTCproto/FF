@@ -48,7 +48,7 @@ jobs:
     
       - name: install git
         run: |
-          apt-get install git -y
+          sudo apt-get install git -y
 
       - name: git clone helpers
         run: |
