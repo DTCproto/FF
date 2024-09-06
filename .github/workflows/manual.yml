@@ -45,10 +45,14 @@ jobs:
         os: [win64]
     steps:
       - uses: actions/checkout@v4
-    
-      - name: install git
-        run: |
-          sudo apt-get install git -y
+
+      - name: Install APT dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: git ragel curl texinfo g++ ed bison flex cvs yasm automake libtool autoconf gcc cmake git make pkg-config zlib1g-dev unzip pax nasm gperf autogen bzip2 autoconf-archive p7zip-full meson clang python3-distutils python-is-python3
+
+      - name: Install pip dependencies
+        run: sudo -H pip3 -qq install meson ninja
 
       - name: git clone helpers
         run: |
