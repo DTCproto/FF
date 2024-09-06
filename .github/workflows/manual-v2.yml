@@ -151,6 +151,6 @@ jobs:
           name: "V2-${{ env.current_date_time }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          body: "FFmpeg nonfree build result."
+          body: "FFmpeg nonfree build result (BtbN/FFmpeg-Builds)."
           files: |
             ${{ github.workspace }}/archives/**
