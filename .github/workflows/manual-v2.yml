@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [win64]
+        os: [win64, linux64, linuxarm64]
     steps:
       - uses: actions/checkout@v4
 
