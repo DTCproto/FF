@@ -22,7 +22,7 @@ on:
         type: choice
         options:
           - "master"
-          - "7.0"
+          - "7.1"
       release_archives:
         description: "enable release archives"
         default: true
