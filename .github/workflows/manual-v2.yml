@@ -23,6 +23,19 @@ on:
         options:
           - "master"
           - "7.1"
+      svt_av1_commit_id:
+        description: "指定svt-av1使用commit id版本"
+        required: true
+        default: "v3.0.1"
+        type: string
+      svt_av1_custom_version:
+        description: "use svt-av1 custom version"
+        default: false
+        type: boolean
+      gnu_mirror:
+        description: "use gnu mirror"
+        default: false
+        type: boolean
       release_archives:
         description: "enable release archives"
         default: true
@@ -100,6 +113,20 @@ jobs:
       - name: fix base remote repo
         run: |
           sed -i 's/GITHUB_REPOSITORY/GITHUB_REPOSITORY_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+          sed -i 's/REGISTRY_OVERRIDE/REGISTRY_OVERRIDE_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+      
+      - name: gnu mirror
+        if: ${{ inputs.gnu_mirror }}
+        run: |
+          sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+      
+      - name: av1-svt custom version
+        if: ${{ inputs.svt_av1_custom_version }}
+        run: |
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
 
       - name: docker prune all
         run: |
