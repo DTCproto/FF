@@ -1,4 +1,4 @@
-name: BUILD_FFMPEG_BY_DOCKER(BTBN)
+name: BUILD_DOCKER(BTBN)
 
 on:
   workflow_dispatch:
