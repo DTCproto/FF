@@ -1,10 +1,9 @@
 #!/bin/sh
-set -e
+set -eux
 
 ### install dnsutils 7z
 
 TARGET="${TARGETPLATFORM:-unknown}"
-echo "Target platform: ${TARGET}"
 
 ### eg: linux/amd64,linux/arm64,linux/arm/v7
 case "${TARGET}" in
@@ -15,7 +14,7 @@ case "${TARGET}" in
     ARCH="linuxarm64"
     ;;
   *)
-    echo "Unsupported CPU: ${TARGET}" >&2;
+    echo "Unsupported platform: ${TARGET}" >&2;
     exit 1
     ;;
 esac
