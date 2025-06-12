@@ -47,6 +47,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
     strategy:
       matrix:
         os: [win64, linux64, linuxarm64]
