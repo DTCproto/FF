@@ -19,7 +19,7 @@ jobs:
   build-base:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       attestations: write
       id-token: write
