@@ -109,7 +109,7 @@ jobs:
           cd ${{ github.workspace }}/build
           git clone -b ${{ inputs.bash_branch }} https://github.com/BtbN/FFmpeg-Builds.git
           cd ${{ github.workspace }}/build/FFmpeg-Builds
-          git reset --hard ${{ inputs.bash_commit_id }}
+          git checkout --force --quiet ${{ inputs.bash_commit_id }}
 
       - name: add master branch addin
         run: |

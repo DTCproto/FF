@@ -459,7 +459,7 @@ do_git_checkout() {
 	fi
   fi
   echo "doing git checkout $desired_branch"
-  git -c 'advice.detachedHead=false' checkout "$desired_branch" || (git_hard_reset && git -c 'advice.detachedHead=false' checkout "$desired_branch") || (git reset --hard "$desired_branch") || exit 1 # can't just use merge -f because might "think" patch files already applied when their changes have been lost, etc...
+  git -c 'advice.detachedHead=false' checkout "$desired_branch" || (git_hard_reset && git -c 'advice.detachedHead=false' checkout "$desired_branch") || (git checkout --force --quiet "$desired_branch") || exit 1 # can't just use merge -f because might "think" patch files already applied when their changes have been lost, etc...
   # vmaf on 16.04 needed that weird reset --hard? huh?
   if git show-ref --verify --quiet "refs/remotes/origin/$desired_branch"; then # $desired_branch is actually a branch, not a tag or commit
     git merge "origin/$desired_branch" || exit 1 # get incoming changes to a branch
@@ -475,7 +475,7 @@ do_git_checkout() {
 }
 
 git_hard_reset() {
-  git reset --hard # throw away results of patch files
+  git checkout --force --quiet # throw away results of patch files
   git clean -fx # throw away local changes; 'already_*' and bak-files for instance.
 }
 

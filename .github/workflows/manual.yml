@@ -77,7 +77,7 @@ jobs:
           cd ${{ github.workspace }}/build
           git clone -b ${{ inputs.helpers_branch }} https://github.com/rdp/ffmpeg-windows-build-helpers.git
           cd ${{ github.workspace }}/build/ffmpeg-windows-build-helpers
-          git reset --hard ${{ inputs.helpers_commit_id }}
+          git checkout --force --quiet ${{ inputs.helpers_commit_id }}
 
       - name: git clone FFmpeg
         run: |
@@ -85,7 +85,7 @@ jobs:
           cd ${{ github.workspace }}/build
           git clone -b ${{ inputs.ffmpeg_branch }} https://github.com/FFmpeg/FFmpeg.git
           cd ${{ github.workspace }}/build/FFmpeg
-          git reset --hard ${{ inputs.ffmpeg_commit_id }}
+          git checkout --force --quiet ${{ inputs.ffmpeg_commit_id }}
           echo "ffmpeg_short_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: add ffmpeg ext build params
