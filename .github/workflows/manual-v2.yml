@@ -22,11 +22,11 @@ on:
         type: choice
         options:
           - "master"
-          - "7.1"
+          - "8.0"
       svt_av1_commit_id:
         description: "指定svt-av1使用commit id版本"
         required: true
-        default: "v3.0.1"
+        default: "v3.1.2"
         type: string
       svt_av1_custom_version:
         description: "use svt-av1 custom version"
