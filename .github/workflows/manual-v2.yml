@@ -32,10 +32,10 @@ on:
         description: "use svt-av1 custom version"
         default: false
         type: boolean
-      gnu_mirror:
-        description: "use gnu mirror"
-        default: false
-        type: boolean
+      #gnu_mirror:
+      #  description: "use gnu mirror"
+      #  default: false
+      #  type: boolean
       release_archives:
         description: "enable release archives"
         default: true
@@ -121,11 +121,11 @@ jobs:
           sed -i 's/REGISTRY_OVERRIDE/REGISTRY_OVERRIDE_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
       
-      - name: gnu mirror
-        if: ${{ inputs.gnu_mirror }}
-        run: |
-          sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
-          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+      #- name: gnu mirror
+      #  if: ${{ inputs.gnu_mirror }}
+      #  run: |
+      #    sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+      #    cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
       
       - name: av1-svt custom version
         if: ${{ inputs.svt_av1_custom_version }}
