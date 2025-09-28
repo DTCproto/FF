@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS builder
+FROM debian:trixie-slim AS builder
 
 # BuildKit 的自动变量
 ARG TARGETPLATFORM
@@ -36,7 +36,7 @@ RUN set -eux; \
 	strip /usr/opt/ffmpeg/bin/*;
 
 # 方便作为基础构建镜像
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # build args
 ARG INSTALL_PATH="/usr/opt/ffmpeg"

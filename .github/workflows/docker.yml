@@ -95,10 +95,10 @@ jobs:
           push: ${{ inputs.release_archives }}
           provenance: false
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:bookworm-slim
+            ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:trixie-slim
             ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:slim
             ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:latest
-            ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:bookworm-slim
+            ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:trixie-slim
             ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:slim
             ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:latest
           cache-from: type=registry,ref=ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:latest
