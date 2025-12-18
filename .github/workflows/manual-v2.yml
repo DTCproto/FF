@@ -30,12 +30,12 @@ on:
         type: string
       svt_av1_custom_version:
         description: "use svt-av1 custom version"
-        default: false
-        type: boolean
-      #gnu_mirror:
-      #  description: "use gnu mirror"
-      #  default: false
-      #  type: boolean
+        default: "auto"
+        type: choice
+        options:
+          - "default"
+          - "auto"
+          - "custom"
       release_archives:
         description: "enable release archives"
         default: true
@@ -45,8 +45,43 @@ concurrency:
   group: ${{ github.workflow }}
 
 jobs:
+  pre:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      default_commit_id: HEAD~0
+      default_branch: ${{ steps.set_global_params.outputs.default_branch }}
+      mingw_w64_commit_id: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id_static: "c4ae0f47b9adf0b6b91dcc906f5b1fbfe342bb42"
+      svt_av1_commit_id: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
+      svt_av1_commit_id_static: "ce61a98aec134f48b5c0251661a32301b8c801e5"
+    steps:
+      - name: set_global_params
+        id: set_global_params
+        run: |
+          echo "default_branch=main" >> "$GITHUB_OUTPUT"
+
+      - name: set_global_params (mingw_w64)
+        id: set_global_params_mingw_w64
+        run: |
+          branch=master
+          commit_id=$(git ls-remote https://github.com/mingw-w64/mingw-w64.git refs/heads/$branch | cut -f1)
+          echo "mingw_w64_commit_id=$commit_id" >> "$GITHUB_OUTPUT"
+
+      - name: set_global_params (svt_av1)
+        id: set_global_params_svt_av1
+        run: |
+          branch=master
+          commit_id=$(git ls-remote https://gitlab.com/AOMediaCodec/SVT-AV1.git refs/heads/$branch | cut -f1)
+          echo "svt_av1_commit_id=$commit_id" >> "$GITHUB_OUTPUT"
+
   build:
     runs-on: ubuntu-latest
+    needs: [pre]
     permissions:
       contents: write
       packages: write
@@ -121,17 +156,28 @@ jobs:
           sed -i 's/REGISTRY_OVERRIDE/REGISTRY_OVERRIDE_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
       
-      #- name: gnu mirror
-      #  if: ${{ inputs.gnu_mirror }}
-      #  run: |
-      #    sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
-      #    cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
-      
-      - name: av1-svt custom version
-        if: ${{ inputs.svt_av1_custom_version }}
+      - name: (custom_auto) gnulib
+        run: |
+          sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+
+      - name: (custom) av1-svt
+        if: ${{ inputs.svt_av1_custom_version == 'custom' }}
         run: |
           sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+
+      - name: (custom_auto) av1-svt
+        if: ${{ inputs.svt_av1_custom_version == 'auto' }}
+        run: |
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ needs.pre.outputs.svt_av1_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+
+      - name: (custom_auto) mingw_w64
+        run: |
+          sed -i 's#"https://git.code.sf.net/p/mingw-w64/mingw-w64.git"#"https://github.com/mingw-w64/mingw-w64.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ needs.pre.outputs.mingw_w64_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
 
       - name: docker prune all
         run: |
@@ -173,7 +219,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [build]
+    needs: [pre, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -181,8 +227,8 @@ jobs:
       attestations: write
       id-token: write
     steps:
-      - name: Free Disk-Space
-        run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
+      #- name: Free Disk-Space
+      #  run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
       #- name: Free Disk Space (Ubuntu)
       #  uses: jlumbroso/free-disk-space@main
       #  with:
