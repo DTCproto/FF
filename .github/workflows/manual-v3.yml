@@ -1,0 +1,161 @@
+name: BUILD_FFMPEG_BY_MANUAL(BTBN)
+
+on:
+  workflow_dispatch:
+    inputs:
+      bash_branch:
+        description: "指定BtbN分支"
+        required: true
+        default: "master"
+        type: choice
+        options:
+          - "master"
+      bash_commit_id:
+        description: "指定BtbN使用commit id版本"
+        required: true
+        default: "HEAD~0"
+        type: string
+      ffmpeg_branch:
+        description: "指定ffmpeg分支"
+        required: true
+        default: "master"
+        type: choice
+        options:
+          - "master"
+          - "8.0"
+      svt_av1_commit_id:
+        description: "指定svt-av1使用commit id版本"
+        required: true
+        default: "v3.1.2"
+        type: string
+      svt_av1_custom_version:
+        description: "use svt-av1 custom version"
+        default: "auto"
+        type: choice
+        options:
+          - "default"
+          - "auto"
+          - "custom"
+      release_archives:
+        description: "enable release archives"
+        default: true
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  pre:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      default_commit_id: HEAD~0
+      default_branch: ${{ steps.set_global_params.outputs.default_branch }}
+      mingw_w64_commit_id: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id_static: "c4ae0f47b9adf0b6b91dcc906f5b1fbfe342bb42"
+      svt_av1_commit_id: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
+      svt_av1_commit_id_static: "ce61a98aec134f48b5c0251661a32301b8c801e5"
+    steps:
+      - name: set_global_params
+        id: set_global_params
+        run: |
+          echo "default_branch=main" >> "$GITHUB_OUTPUT"
+
+      - name: set_global_params (mingw_w64)
+        id: set_global_params_mingw_w64
+        run: |
+          branch=master
+          commit_id=$(git ls-remote https://github.com/mingw-w64/mingw-w64.git refs/heads/$branch | cut -f1)
+          echo "mingw_w64_commit_id=$commit_id" >> "$GITHUB_OUTPUT"
+
+      - name: set_global_params (svt_av1)
+        id: set_global_params_svt_av1
+        run: |
+          branch=master
+          commit_id=$(git ls-remote https://gitlab.com/AOMediaCodec/SVT-AV1.git refs/heads/$branch | cut -f1)
+          echo "svt_av1_commit_id=$commit_id" >> "$GITHUB_OUTPUT"
+
+  build-win64:
+    needs: [pre]
+    uses: ./.github/workflows/call-build-ffmpeg.yml
+    with:
+      runner: ubuntu-latest
+      target: win64
+      ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
+      bash_branch: ${{ inputs.bash_branch }}
+      bash_commit_id: ${{ inputs.bash_commit_id }}
+      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
+      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
+      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
+      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+
+  build-linux64:
+    needs: [pre]
+    uses: ./.github/workflows/call-build-ffmpeg.yml
+    with:
+      runner: ubuntu-latest
+      target: linux64
+      ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
+      bash_branch: ${{ inputs.bash_branch }}
+      bash_commit_id: ${{ inputs.bash_commit_id }}
+      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
+      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
+      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
+      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+
+  build-linuxarm64:
+    needs: [pre]
+    uses: ./.github/workflows/call-build-ffmpeg.yml
+    with:
+      runner: ubuntu-latest
+      target: linuxarm64
+      ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
+      bash_branch: ${{ inputs.bash_branch }}
+      bash_commit_id: ${{ inputs.bash_commit_id }}
+      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
+      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
+      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
+      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+
+  release:
+    needs: [pre, build-win64, build-linux64, build-linuxarm64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download FFmpeg archives
+        uses: actions/download-artifact@v5
+        with:
+          pattern: ffmpeg-bin-*
+          merge-multiple: true
+          path: ${{ github.workspace }}/archives
+
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/archives
+
+      - name: Get current date time
+        run: |
+          echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+
+      - name: Release FFmpeg archives
+        uses: softprops/action-gh-release@v2
+        if: ${{ inputs.release_archives }}
+        with:
+          tag_name: "V2-${{ env.current_date_time }}"
+          name: "V2-${{ env.current_date_time }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          body: "FFmpeg nonfree build result (BtbN/FFmpeg-Builds)."
+          files: |
+            ${{ github.workspace }}/archives/**

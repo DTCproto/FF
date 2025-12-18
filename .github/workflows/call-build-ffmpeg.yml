@@ -1,0 +1,172 @@
+name: build-ffmpeg(CALL)
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      ffmpeg_branch:
+        required: true
+        type: string
+      # BTBN
+      bash_branch:
+        required: true
+        type: string
+      bash_commit_id:
+        required: true
+        type: string
+      svt_av1_custom_version:
+        required: true
+        type: string
+      svt_av1_commit_id:
+        required: true
+        type: string
+      svt_av1_commit_id_static:
+        required: true
+        type: string
+      mingw_w64_commit_id_static:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    #strategy:
+    #  matrix:
+    #    os: [win64, linux64, linuxarm64]
+    steps:
+      - name: Free Disk-Space
+        run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
+      #- name: Free Disk Space (Ubuntu)
+      #  uses: jlumbroso/free-disk-space@main
+      #  with:
+      #    tool-cache: false
+      #    android: true
+      #    dotnet: true
+      #    haskell: true
+      #    large-packages: true
+      #    docker-images: false
+      #    swap-storage: true
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:qemu-v10.0.4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install APT dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: git curl subversion
+
+      - name: set branch params[master]
+        if: ${{ inputs.ffmpeg_branch == 'master' }}
+        run: |
+          echo ffmpeg_branch_fullname=${{ inputs.ffmpeg_branch }} >> $GITHUB_ENV
+
+      - name: set branch params[release]
+        if: ${{ inputs.ffmpeg_branch != 'master' }}
+        run: |
+          echo ffmpeg_branch_fullname="release/${{ inputs.ffmpeg_branch }}" >> $GITHUB_ENV
+
+      - name: Get FFmpeg commit
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone --depth=1 -b ${{ env.ffmpeg_branch_fullname }} https://github.com/FFmpeg/FFmpeg.git
+          cd ${{ github.workspace }}/build/FFmpeg
+          echo "ffmpeg_sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: git clone bash
+        run: |
+          mkdir -p ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.bash_branch }} https://github.com/BtbN/FFmpeg-Builds.git
+          cd ${{ github.workspace }}/build/FFmpeg-Builds
+          git checkout --force --quiet ${{ inputs.bash_commit_id }}
+
+      - name: add master branch addin
+        run: |
+          cp -f ${{ github.workspace }}/ext/master.sh ${{ github.workspace }}/build/FFmpeg-Builds/addins/master.sh
+
+      - name: fix base remote repo
+        run: |
+          sed -i 's/GITHUB_REPOSITORY/GITHUB_REPOSITORY_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+          sed -i 's/REGISTRY_OVERRIDE/REGISTRY_OVERRIDE_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
+      
+      - name: (custom_auto) gnulib
+        run: |
+          sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
+
+      - name: (custom) av1-svt
+        if: ${{ inputs.svt_av1_custom_version == 'custom' }}
+        run: |
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+
+      - name: (custom_auto) av1-svt
+        if: ${{ inputs.svt_av1_custom_version == 'auto' }}
+        run: |
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
+
+      - name: (custom_auto) mingw_w64
+        run: |
+          sed -i 's#"https://git.code.sf.net/p/mingw-w64/mingw-w64.git"#"https://github.com/mingw-w64/mingw-w64.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.mingw_w64_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+
+      - name: docker prune all
+        run: |
+          docker builder prune --all
+
+      - name: set build env params
+        run: |
+          echo "QUICKBUILD=1" >> "$GITHUB_ENV"
+
+      - name: build base image
+        run: |
+          cd ${{ github.workspace }}/build/FFmpeg-Builds/
+          ./makeimage.sh ${{ inputs.target }} nonfree ${{ inputs.ffmpeg_branch }}
+
+      - name: build ffmpeg
+        run: |
+          cd ${{ github.workspace }}/build/FFmpeg-Builds/
+          ./build.sh ${{ inputs.target }} nonfree ${{ inputs.ffmpeg_branch }}
+
+      - name: show build result files
+        run: |
+          ls -R ${{ github.workspace }}/build/FFmpeg-Builds/artifacts
+
+      - name: 7-Zip FFmpeg binaries
+        run: |
+          7z a -mx9 ${{ github.workspace }}/temp/ffmpeg-bin-${{ inputs.target }}-${{ env.ffmpeg_sha_short }}-nonfree.7z ${{ github.workspace }}/build/FFmpeg-Builds/artifacts/*
+
+      - name: show zip files
+        run: |
+          ls -R ${{ github.workspace }}/temp
+
+      - name: Upload FFmpeg binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-bin-${{ inputs.target }}-${{ env.ffmpeg_sha_short }}-nonfree
+          compression-level: 9
+          path: |
+            ${{ github.workspace }}/temp/*
+          if-no-files-found: error
