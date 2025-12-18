@@ -82,6 +82,11 @@ jobs:
   build-win64:
     needs: [pre]
     uses: ./.github/workflows/call-build-ffmpeg.yml
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
     with:
       runner: ubuntu-latest
       target: win64
@@ -96,6 +101,11 @@ jobs:
   build-linux64:
     needs: [pre]
     uses: ./.github/workflows/call-build-ffmpeg.yml
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
     with:
       runner: ubuntu-latest
       target: linux64
@@ -110,6 +120,11 @@ jobs:
   build-linuxarm64:
     needs: [pre]
     uses: ./.github/workflows/call-build-ffmpeg.yml
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
     with:
       runner: ubuntu-latest
       target: linuxarm64
