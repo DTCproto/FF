@@ -44,18 +44,27 @@ jobs:
     #  matrix:
     #    os: [win64, linux64, linuxarm64]
     steps:
-      - name: Free Disk-Space
-        run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
-      #- name: Free Disk Space (Ubuntu)
-      #  uses: jlumbroso/free-disk-space@main
-      #  with:
-      #    tool-cache: false
-      #    android: true
-      #    dotnet: true
-      #    haskell: true
-      #    large-packages: true
-      #    docker-images: false
-      #    swap-storage: true
+      #- name: Free Disk-Space
+      #  run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
+
+      - name: (Before)Free Disk-Space
+        run: df -h
+
+      - name: Free Disk Space
+        uses: endersonmenezes/free-disk-space@v3  # Use @main for latest, @v3 for stable
+        with:
+          remove_android: true
+          remove_dotnet: true
+          remove_haskell: true
+          remove_tool_cache: true
+          remove_swap: true
+          remove_packages_one_command: true
+          rm_cmd: "rmz"  # Use 'rmz' for faster deletion (default: 'rm')
+          #rmz_version: "3.1.1"  # Required when rm_cmd is 'rmz'
+          testing: false
+
+      - name: (After)Free Disk-Space
+        run: df -h
 
       - name: Checkout
         uses: actions/checkout@v5

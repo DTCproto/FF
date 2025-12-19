@@ -1,4 +1,4 @@
-name: BUILD_FFMPEG_BY_MANUAL(BTBN)
+name: BUILD_FFMPEG_BY_MANUAL_V3(BTBN)
 
 on:
   workflow_dispatch:
