@@ -146,10 +146,10 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download FFmpeg archives
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           pattern: ffmpeg-bin-*
           merge-multiple: true
