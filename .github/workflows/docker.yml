@@ -16,8 +16,36 @@ concurrency:
   group: ${{ github.workflow }}
 
 jobs:
+  pre:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      default_commit_id: HEAD~0
+      default_branch: ${{ steps.set_global_params.outputs.default_branch }}
+      ACTOR_LC: ${{ steps.set_case_params.outputs.ACTOR_LC }}
+      REPOSITORY_LC: ${{ steps.set_case_params.outputs.REPOSITORY_LC }}
+    steps:
+      - name: set global params
+        id: set_global_params
+        run: |
+          echo "default_branch=main" >> "$GITHUB_OUTPUT"
+
+      - name: set lower case name
+        id: set_case_params
+        run: |
+          echo "ACTOR_LC=${ACTOR,,}" >> "$GITHUB_OUTPUT"
+          echo "REPOSITORY_LC=${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        env:
+          ACTOR: '${{ github.actor }}'
+          REPOSITORY: '${{ github.repository }}'
+
   build-base:
     runs-on: ubuntu-latest
+    needs: [pre]
     permissions:
       contents: write
       packages: write
@@ -85,14 +113,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: set lower case name
-        run: |
-          echo "ACTOR_LC=${ACTOR,,}" >>${GITHUB_ENV}
-          echo "REPOSITORY_LC=${REPOSITORY,,}" >>${GITHUB_ENV}
-        env:
-          ACTOR: '${{ github.actor }}'
-          REPOSITORY: '${{ github.repository }}'
-
       # 自动标签
       #- name: Extract metadata (tags, labels) for Docker
       #  id: meta
@@ -119,8 +139,8 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:trixie-slim
             ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:slim
             ${{ secrets.DOCKERHUB_USERNAME }}/ffmpeg:latest
-            ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:trixie-slim
-            ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:slim
-            ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:latest
-          cache-from: type=registry,ref=ghcr.io/${{ env.ACTOR_LC }}/ffmpeg:latest
-          cache-to: type=inline
+            ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:trixie-slim
+            ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:slim
+            ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:latest
+          cache-from: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache,mode=max
