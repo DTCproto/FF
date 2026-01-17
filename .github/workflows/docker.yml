@@ -142,5 +142,7 @@ jobs:
             ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:trixie-slim
             ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:slim
             ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:latest
-          cache-from: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache,mode=max
+          #cache-from: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache
+          #cache-to: type=registry,ref=ghcr.io/${{ needs.pre.outputs.ACTOR_LC }}/ffmpeg:buildcache,mode=max
+          # 完全禁用缓存(二选一)
+          no-cache: true
