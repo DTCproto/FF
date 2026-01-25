@@ -137,7 +137,7 @@ jobs:
       base_branch: ${{ inputs.base_branch }}
       base_commit_id: ${{ inputs.base_commit_id }}
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
-      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   build-linux64:
@@ -155,7 +155,7 @@ jobs:
       base_branch: ${{ inputs.base_branch }}
       base_commit_id: ${{ inputs.base_commit_id }}
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
-      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   build-linuxarm64:
@@ -173,7 +173,7 @@ jobs:
       base_branch: ${{ inputs.base_branch }}
       base_commit_id: ${{ inputs.base_commit_id }}
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
-      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   release:
