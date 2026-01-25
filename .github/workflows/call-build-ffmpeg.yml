@@ -9,26 +9,24 @@ on:
       target:
         required: true
         type: string
+      # FFMPEG
       ffmpeg_branch:
         required: true
         type: string
       # BTBN
-      bash_branch:
+      base_branch:
         required: true
         type: string
-      bash_commit_id:
+      base_commit_id:
         required: true
         type: string
-      svt_av1_custom_version:
+      use_default_svt_av1_version:
         required: true
-        type: string
+        type: boolean
       svt_av1_commit_id:
         required: true
         type: string
-      svt_av1_commit_id_static:
-        required: true
-        type: string
-      mingw_w64_commit_id_static:
+      mingw_w64_commit_id:
         required: true
         type: string
 
@@ -106,9 +104,9 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/build
           cd ${{ github.workspace }}/build
-          git clone -b ${{ inputs.bash_branch }} https://github.com/BtbN/FFmpeg-Builds.git
+          git clone -b ${{ inputs.base_branch }} https://github.com/BtbN/FFmpeg-Builds.git
           cd ${{ github.workspace }}/build/FFmpeg-Builds
-          git checkout --force --quiet ${{ inputs.bash_commit_id }}
+          git checkout --force --quiet ${{ inputs.base_commit_id }}
 
       - name: add master branch addin
         run: |
@@ -120,27 +118,21 @@ jobs:
           sed -i 's/REGISTRY_OVERRIDE/REGISTRY_OVERRIDE_LOCAL/g' ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/util/vars.sh
       
-      - name: (custom_auto) gnulib
+      - name: (custom) gnulib
         run: |
           sed -i 's#"https://git.savannah.gnu.org/git/gnulib.git"#"https://github.com/coreutils/gnulib.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/20-libiconv.sh
 
       - name: (custom) av1-svt
-        if: ${{ inputs.svt_av1_custom_version == 'custom' }}
+        if: ${{ !inputs.use_default_svt_av1_version }}
         run: |
           sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
 
-      - name: (custom_auto) av1-svt
-        if: ${{ inputs.svt_av1_custom_version == 'auto' }}
-        run: |
-          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.svt_av1_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
-          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-svtav1.sh
-
-      - name: (custom_auto) mingw_w64
+      - name: (custom) mingw_w64
         run: |
           sed -i 's#"https://git.code.sf.net/p/mingw-w64/mingw-w64.git"#"https://github.com/mingw-w64/mingw-w64.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
-          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.mingw_w64_commit_id_static }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+          sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.mingw_w64_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
 
       - name: docker prune all

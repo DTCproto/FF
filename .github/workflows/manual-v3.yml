@@ -3,14 +3,14 @@ name: BUILD_FFMPEG_BY_MANUAL_V3(BTBN)
 on:
   workflow_dispatch:
     inputs:
-      bash_branch:
+      base_branch:
         description: "指定BtbN分支"
         required: true
         default: "master"
         type: choice
         options:
           - "master"
-      bash_commit_id:
+      base_commit_id:
         description: "指定BtbN使用commit id版本"
         required: true
         default: "HEAD~0"
@@ -28,14 +28,25 @@ on:
         required: true
         default: "v4.0.0"
         type: string
-      svt_av1_custom_version:
-        description: "use svt-av1 custom version"
+      svt_av1_version_select:
+        description: "select custom svt_av1 version"
         default: "auto"
         type: choice
         options:
-          - "default"
+          - "static"
           - "auto"
           - "custom"
+      mingw_w64_version_select:
+        description: "select custom mingw_w64 version"
+        default: "auto"
+        type: choice
+        options:
+          - "static"
+          - "auto"
+      use_default_svt_av1_version:
+        description: "use default svt_av1 version"
+        default: false
+        type: boolean
       release_archives:
         description: "enable release archives"
         default: true
@@ -55,9 +66,9 @@ jobs:
     outputs:
       default_commit_id: HEAD~0
       default_branch: ${{ steps.set_global_params.outputs.default_branch }}
-      mingw_w64_commit_id: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id_auto: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
       mingw_w64_commit_id_static: "55735d71ed1187098df4d80a8f6c98a7735b1cd5"
-      svt_av1_commit_id: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
+      svt_av1_commit_id_auto: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
       svt_av1_commit_id_static: "a4117db450485b35666e7fe3f75b291b60a6a2aa"
     steps:
       - name: set_global_params
@@ -79,8 +90,40 @@ jobs:
           commit_id=$(git ls-remote https://gitlab.com/AOMediaCodec/SVT-AV1.git refs/heads/$branch | cut -f1)
           echo "svt_av1_commit_id=$commit_id" >> "$GITHUB_OUTPUT"
 
-  build-win64:
+  select:
+    runs-on: ubuntu-latest
     needs: [pre]
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      mingw_w64_commit_id: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
+      svt_av1_commit_id: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
+    steps:
+      - name: set_global_params (mingw_w64)
+        id: set_global_params_mingw_w64
+        run: |
+          if [ "${{ inputs.mingw_w64_version_select }}" = "auto" ]; then
+            echo "mingw_w64_commit_id=${{ needs.pre.outputs.mingw_w64_commit_id_auto }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mingw_w64_commit_id=${{ needs.pre.outputs.mingw_w64_commit_id_static }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: set_global_params (svt_av1)
+        id: set_global_params_svt_av1
+        run: |
+          if [ "${{ inputs.svt_av1_version_select }}" = "auto" ]; then
+            echo "svt_av1_commit_id=${{ needs.pre.outputs.svt_av1_commit_id_auto }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.svt_av1_version_select }}" = "static" ]; then
+            echo "svt_av1_commit_id=${{ needs.pre.outputs.svt_av1_commit_id_static }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "svt_av1_commit_id=${{ inputs.svt_av1_commit_id }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-win64:
+    needs: [pre, select]
     uses: ./.github/workflows/call-build-ffmpeg.yml
     permissions:
       contents: write
@@ -91,15 +134,14 @@ jobs:
       runner: ubuntu-latest
       target: win64
       ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
-      bash_branch: ${{ inputs.bash_branch }}
-      bash_commit_id: ${{ inputs.bash_commit_id }}
-      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
-      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
-      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+      base_branch: ${{ inputs.base_branch }}
+      base_commit_id: ${{ inputs.base_commit_id }}
+      use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
+      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   build-linux64:
-    needs: [pre]
+    needs: [pre, select]
     uses: ./.github/workflows/call-build-ffmpeg.yml
     permissions:
       contents: write
@@ -110,15 +152,14 @@ jobs:
       runner: ubuntu-latest
       target: linux64
       ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
-      bash_branch: ${{ inputs.bash_branch }}
-      bash_commit_id: ${{ inputs.bash_commit_id }}
-      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
-      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
-      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+      base_branch: ${{ inputs.base_branch }}
+      base_commit_id: ${{ inputs.base_commit_id }}
+      use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
+      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   build-linuxarm64:
-    needs: [pre]
+    needs: [pre, select]
     uses: ./.github/workflows/call-build-ffmpeg.yml
     permissions:
       contents: write
@@ -129,15 +170,14 @@ jobs:
       runner: ubuntu-latest
       target: linuxarm64
       ffmpeg_branch: ${{ inputs.ffmpeg_branch }}
-      bash_branch: ${{ inputs.bash_branch }}
-      bash_commit_id: ${{ inputs.bash_commit_id }}
-      svt_av1_custom_version: ${{ inputs.svt_av1_custom_version }}
-      svt_av1_commit_id: ${{ inputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: ${{ needs.pre.outputs.svt_av1_commit_id_static }}
-      mingw_w64_commit_id_static: ${{ needs.pre.outputs.mingw_w64_commit_id_static }}
+      base_branch: ${{ inputs.base_branch }}
+      base_commit_id: ${{ inputs.base_commit_id }}
+      use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
+      svt_av1_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
 
   release:
-    needs: [pre, build-win64, build-linux64, build-linuxarm64]
+    needs: [pre, select, build-win64, build-linux64, build-linuxarm64]
     runs-on: ubuntu-latest
     permissions:
       contents: write
