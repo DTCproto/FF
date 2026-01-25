@@ -82,15 +82,13 @@ jobs:
         with:
           packages: git curl subversion
 
-      - name: set branch params[master]
-        if: ${{ inputs.ffmpeg_branch == 'master' }}
+      - name: set branch params
         run: |
-          echo ffmpeg_branch_fullname=${{ inputs.ffmpeg_branch }} >> $GITHUB_ENV
-
-      - name: set branch params[release]
-        if: ${{ inputs.ffmpeg_branch != 'master' }}
-        run: |
-          echo ffmpeg_branch_fullname="release/${{ inputs.ffmpeg_branch }}" >> $GITHUB_ENV
+          if [ "${{ inputs.ffmpeg_branch }}" = "master" ]; then
+            echo "ffmpeg_branch_fullname=${{ inputs.ffmpeg_branch }}" >> "$GITHUB_ENV"
+          else
+            echo "ffmpeg_branch_fullname=release/${{ inputs.ffmpeg_branch }}" >> "$GITHUB_ENV"
+          fi
 
       - name: Get FFmpeg commit
         run: |
