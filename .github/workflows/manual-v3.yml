@@ -211,6 +211,11 @@ jobs:
           name: "V2-${{ env.current_date_time }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          body: "FFmpeg nonfree build result (BtbN/FFmpeg-Builds)."
+          body: |
+            FFmpeg nonfree build result (BtbN/FFmpeg-Builds).
+            FFmpeg from [${{ inputs.ffmpeg_branch }}] 
+            BtbN from [${{ inputs.base_branch }}] [${{ inputs.base_commit_id }}]
+            svt_av1 from [(use default): ${{ inputs.use_default_svt_av1_version }}] [(in the case of custom) ${{ needs.select.outputs.svt_av1_commit_id }}]
+            mingw_w64 from [${{ needs.select.outputs.mingw_w64_commit_id }}]
           files: |
             ${{ github.workspace }}/archives/**
