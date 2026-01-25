@@ -26,7 +26,7 @@ on:
       svt_av1_commit_id:
         description: "指定svt-av1使用commit id版本"
         required: true
-        default: "v3.1.2"
+        default: "v4.0.0"
         type: string
       svt_av1_custom_version:
         description: "use svt-av1 custom version"
