@@ -26,7 +26,7 @@ on:
       svt_av1_commit_id:
         description: "指定svt-av1使用commit id版本"
         required: true
-        default: "v4.0.0"
+        default: "v4.0.1"
         type: string
       svt_av1_version_select:
         description: "select custom svt_av1 version"
@@ -67,9 +67,9 @@ jobs:
       default_commit_id: HEAD~0
       default_branch: ${{ steps.set_global_params.outputs.default_branch }}
       mingw_w64_commit_id_auto: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
-      mingw_w64_commit_id_static: "55735d71ed1187098df4d80a8f6c98a7735b1cd5"
+      mingw_w64_commit_id_static: "7d022bba72ed8bf7c099a91863ba4a790a98d05c"
       svt_av1_commit_id_auto: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: "a4117db450485b35666e7fe3f75b291b60a6a2aa"
+      svt_av1_commit_id_static: "52e32a85612e66f33c43b6ceadb56aac54539dff"
     steps:
       - name: set_global_params
         id: set_global_params
