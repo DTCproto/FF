@@ -22,6 +22,7 @@ on:
         type: choice
         options:
           - "master"
+          - "8.1"
           - "8.0"
       svt_av1_commit_id:
         description: "指定svt-av1使用commit id版本"
