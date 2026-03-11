@@ -148,7 +148,7 @@ jobs:
 
       - name: add master branch addin
         run: |
-          cp -f ${{ github.workspace }}/ext/master.sh ${{ github.workspace }}/build/FFmpeg-Builds/addins/master.sh
+          cp -rf ${{ github.workspace }}/ext/addins/. ${{ github.workspace }}/build/FFmpeg-Builds/addins/
 
       - name: fix base remote repo
         run: |
