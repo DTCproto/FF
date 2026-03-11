@@ -67,9 +67,9 @@ jobs:
       default_commit_id: HEAD~0
       default_branch: ${{ steps.set_global_params.outputs.default_branch }}
       mingw_w64_commit_id_auto: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
-      mingw_w64_commit_id_static: "7d022bba72ed8bf7c099a91863ba4a790a98d05c"
+      mingw_w64_commit_id_static: "59cd5ce805b12cdefced08ce567d3518c6053b40"
       svt_av1_commit_id_auto: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: "52e32a85612e66f33c43b6ceadb56aac54539dff"
+      svt_av1_commit_id_static: "244fd7b048e52a6fd0c1844539b6f40fe2804ffc"
     steps:
       - name: set_global_params
         id: set_global_params
