@@ -97,7 +97,7 @@ jobs:
 
       - name: init
         run: |
-          cp -rf ${{ github.workspace }}/conf/* ${{ github.workspace }}/mainline/
+          cp -rf ${{ github.workspace }}/conf/. ${{ github.workspace }}/mainline/
           ls ${{ github.workspace }}/mainline/
 
       - name: Login to Docker Hub
