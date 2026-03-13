@@ -190,7 +190,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download FFmpeg archives
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: ffmpeg-bin-*
           merge-multiple: true
