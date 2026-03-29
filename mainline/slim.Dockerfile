@@ -57,6 +57,11 @@ RUN set -eux; \
 	ln -svf "${INSTALL_PATH}/bin/ffmpeg" "/usr/local/bin/ffmpeg"; \
 	ln -svf "${INSTALL_PATH}/bin/ffprobe" "/usr/local/bin/ffprobe";
 
+ENV TZ=Asia/Shanghai
+ENV LC_TIME=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+
 LABEL \
 	description="FFMPEG" \
 	maintainer="Custom Auto Build"
