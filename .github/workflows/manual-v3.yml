@@ -205,7 +205,7 @@ jobs:
           echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
 
       - name: Release FFmpeg archives
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: ${{ inputs.release_archives }}
         with:
           tag_name: "V2-${{ env.current_date_time }}"
