@@ -202,7 +202,7 @@ jobs:
 
       - name: Get current date time
         run: |
-          echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+          echo "current_date_time=$(date -d '8 hour' -u +'%Y%m%d-%H%M%S')" >> "$GITHUB_ENV"
 
       - name: Release FFmpeg archives
         uses: softprops/action-gh-release@v3
