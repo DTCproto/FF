@@ -27,7 +27,7 @@ on:
       svt_av1_commit_id:
         description: "指定svt-av1使用commit id版本"
         required: true
-        default: "v4.1.0"
+        default: "v4.2.0"
         type: string
       svt_av1_version_select:
         description: "select custom svt_av1 version"
@@ -70,7 +70,7 @@ jobs:
       mingw_w64_commit_id_auto: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
       mingw_w64_commit_id_static: "v14.0.0"
       svt_av1_commit_id_auto: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
-      svt_av1_commit_id_static: "v4.1.0"
+      svt_av1_commit_id_static: "v4.2.0"
     steps:
       - name: set_global_params
         id: set_global_params
