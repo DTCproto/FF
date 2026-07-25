@@ -68,7 +68,7 @@ jobs:
       default_commit_id: HEAD~0
       default_branch: ${{ steps.set_global_params.outputs.default_branch }}
       mingw_w64_commit_id_auto: ${{ steps.set_global_params_mingw_w64.outputs.mingw_w64_commit_id }}
-      mingw_w64_commit_id_static: "d999af62247693a8b5b25a98d67316c8bb2dcd37"
+      mingw_w64_commit_id_static: "v14.x"
       svt_av1_commit_id_auto: ${{ steps.set_global_params_svt_av1.outputs.svt_av1_commit_id }}
       svt_av1_commit_id_static: "v4.2.0"
     steps:
