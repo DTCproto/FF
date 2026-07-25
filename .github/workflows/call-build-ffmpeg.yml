@@ -29,6 +29,9 @@ on:
       mingw_w64_commit_id:
         required: true
         type: string
+      use_crt_strndup:
+        required: true
+        type: boolean
 
 jobs:
   build:
@@ -131,6 +134,12 @@ jobs:
           sed -i 's#"https://git.code.sf.net/p/mingw-w64/mingw-w64.git"#"https://github.com/mingw-w64/mingw-w64.git"#g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
           sed -i 's/SCRIPT_COMMIT="[0-9a-f]\+"/SCRIPT_COMMIT="${{ inputs.mingw_w64_commit_id }}"/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
           cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/10-mingw.sh
+
+      - name: (custom) libssh fix strndup
+        if: ${{ !inputs.use_crt_strndup }}
+        run: |
+          sed -i 's/-DHAVE_STRNDUP=YES/-DHAVE_STRNDUP=NO/g' ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-libssh.sh
+          cat ${{ github.workspace }}/build/FFmpeg-Builds/scripts.d/50-libssh.sh
 
       - name: docker prune all
         run: |

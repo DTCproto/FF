@@ -140,6 +140,7 @@ jobs:
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
       svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      use_crt_strndup: true
 
   build-linux64:
     needs: [pre, select]
@@ -158,6 +159,7 @@ jobs:
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
       svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      use_crt_strndup: true
 
   build-linuxarm64:
     needs: [pre, select]
@@ -176,6 +178,7 @@ jobs:
       use_default_svt_av1_version: ${{ inputs.use_default_svt_av1_version }}
       svt_av1_commit_id: ${{ needs.select.outputs.svt_av1_commit_id }}
       mingw_w64_commit_id: ${{ needs.select.outputs.mingw_w64_commit_id }}
+      use_crt_strndup: true
 
   release:
     needs: [pre, select, build-win64, build-linux64, build-linuxarm64]
